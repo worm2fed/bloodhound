@@ -28,6 +28,7 @@ data InnerHit = InnerHit { innerHitName      :: Text
                          , innerHitSort      :: Maybe Sort
                          , innerHitHighlight :: Maybe Highlights
                          , innerHitSource    :: Maybe Source
+                         , innerHitExplain   :: Maybe Explain
                          } deriving (Eq, Show)
 
 instance ToJSON InnerHit where
@@ -37,8 +38,9 @@ instance ToJSON InnerHit where
                                   , "sort"      .= innerHitSort
                                   , "highlight" .= innerHitHighlight
                                   , "_source"   .= innerHitSource
+                                  , "explain"   .= innerHitExplain
                                   ]
   
 mkInnerHit :: Text -> InnerHit
-mkInnerHit name = InnerHit name Nothing Nothing Nothing Nothing Nothing 
+mkInnerHit name = InnerHit name Nothing Nothing Nothing Nothing Nothing Nothing
   

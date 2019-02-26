@@ -243,3 +243,7 @@ newtype TokenFilter =
 newtype CharFilter =
   CharFilter Text
   deriving (Eq, Show, FromJSON, ToJSON)
+
+newtype Explain =
+  Explain Bool
+  deriving (Eq, Show, FromJSON, ToJSON)

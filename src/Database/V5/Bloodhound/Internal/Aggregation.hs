@@ -506,18 +506,20 @@ data Hit a =
       , hitSource    :: Maybe a
       , hitFields    :: Maybe HitFields
       , hitHighlight :: Maybe HitHighlight 
+      , hitExplain   :: Maybe Object 
       , hitInnerHits :: Maybe (M.Map Text (InnerHitResult a))
       } deriving (Eq, Show)
 
 instance (FromJSON a) => FromJSON (Hit a) where
   parseJSON (Object v) = Hit <$>
-                         v .:  "_index"    <*>
-                         v .:  "_type"     <*>
-                         v .:  "_id"       <*>
-                         v .:  "_score"    <*>
-                         v .:? "_source"   <*>
-                         v .:? "fields"    <*>
-                         v .:? "highlight" <*>
+                         v .:  "_index"       <*>
+                         v .:  "_type"        <*>
+                         v .:  "_id"          <*>
+                         v .:  "_score"       <*>
+                         v .:? "_source"      <*>
+                         v .:? "fields"       <*>
+                         v .:? "highlight"    <*>
+                         v .:? "_explanation" <*>
                          v .:? "inner_hits"
   parseJSON _          = empty
 
@@ -527,19 +529,21 @@ data NestedHit a =
             , nhitDocId     :: DocId
             , nhitScore     :: Score
             , nhitSource    :: Maybe a
-            , nhitFields    :: Maybe HitFields
-            , nhitHighlight :: Maybe HitHighlight 
+            , nhitFields    :: Maybe HitFields            
+            , nhitExplain   :: Maybe Object 
+            , nhitHighlight :: Maybe HitHighlight
       } deriving (Eq, Show)
       
 instance (FromJSON a) => FromJSON (NestedHit a) where
   parseJSON (Object v) = NestedHit <$>
-                         v .:  "_index"    <*>
-                         v .:  "_type"     <*>
-                         v .:  "_id"       <*>
-                         v .:  "_score"    <*>
-                         v .:? "_source"   <*>
-                         v .:? "fields"    <*>
-                         v .:? "highlight"
+                         v .:  "_index"       <*>
+                         v .:  "_type"        <*>
+                         v .:  "_id"          <*>
+                         v .:  "_score"       <*>
+                         v .:? "_source"      <*>
+                         v .:? "fields"       <*>
+                         v .:? "_explanation" <*>
+                         v .:? "highlight"                         
   parseJSON _          = empty
   
 newtype InnerHitResult b = InnerHitResult { unInnerHitResult :: NestedSearchHits b } 
@@ -553,7 +557,7 @@ instance (FromJSON a) => FromJSON (InnerHitResult a) where
 nestedHit2Hit :: NestedHit a -> Hit a 
 nestedHit2Hit NestedHit{..} = 
   Hit nhitIndex nhitType nhitDocId nhitScore nhitSource nhitFields 
-      nhitHighlight Nothing
+      nhitHighlight nhitExplain Nothing
       
 nestedSearchHits2SearchHits :: NestedSearchHits a -> SearchHits a 
 nestedSearchHits2SearchHits NestedSearchHits{..} =

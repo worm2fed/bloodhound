@@ -117,6 +117,7 @@ module Database.V5.Bloodhound.Types
        , TrackSortScores
        , From(..)
        , Size(..)
+       , Explain(..)
        , Source(..)
        , PatternOrPatterns(..)
        , Include(..)
@@ -466,13 +467,14 @@ data Search = Search { queryBody       :: Maybe Query
                      , source          :: Maybe Source
                      , suggestBody     :: Maybe Suggest -- ^ Only one Suggestion request / response per Search is supported.
                      , collapse        :: Maybe Collapse                     
+                     , explain         :: Maybe Explain                     
                      } deriving (Eq, Show)
 
 
 instance ToJSON Search where
   toJSON (Search mquery sFilter sort searchAggs
           highlight sTrackSortScores sFrom sSize _ sFields
-          sScriptFields sSource sSuggest sCollapse) =
+          sScriptFields sSource sSuggest sCollapse sExplain) =
     omitNulls [ "query"         .= query'
               , "sort"          .= sort
               , "aggregations"  .= searchAggs
@@ -484,7 +486,8 @@ instance ToJSON Search where
               , "script_fields" .= sScriptFields
               , "_source"       .= sSource
               , "suggest"       .= sSuggest
-              , "collapse"      .= sCollapse]
+              , "collapse"      .= sCollapse
+              , "explain"       .= sExplain]
 
     where query' = case sFilter of
                     Nothing -> mquery
