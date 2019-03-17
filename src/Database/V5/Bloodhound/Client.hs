@@ -39,6 +39,7 @@ module Database.V5.Bloodhound.Client
        -- *** Index Aliases
        , updateIndexAliases
        , getIndexAliases
+       , getIndexAlias
        , deleteIndexAlias
        -- *** Index Templates
        , putTemplate
@@ -755,6 +756,13 @@ getIndexAliases :: (MonadBH m, MonadThrow m)
                 => m (Either EsError IndexAliasesSummary)
 getIndexAliases = parseEsResponse =<< get =<< url
   where url = joinPath ["_aliases"]
+  
+-- | Get summary for specific alias configured on the server.
+getIndexAlias :: (MonadBH m, MonadThrow m)
+                => IndexAliasName -> m (Either EsError IndexAliasesSummary)
+getIndexAlias (IndexAliasName (IndexName name)) = 
+    parseEsResponse =<< get =<< url
+  where url = joinPath ["_alias",name]
 
 -- | Delete a single alias, removing it from all indices it
 --   is currently associated with.
