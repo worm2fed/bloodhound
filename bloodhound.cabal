@@ -1,5 +1,5 @@
 name:                bloodhound
-version:             0.16.0.0.104
+version:             0.16.0.0.105
 synopsis:            Elasticsearch client library for Haskell
 description:         Elasticsearch made awesome for Haskell hackers
 homepage:            https://github.com/bitemyapp/bloodhound
