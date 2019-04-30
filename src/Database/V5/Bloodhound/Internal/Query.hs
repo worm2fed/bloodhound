@@ -1186,6 +1186,11 @@ newtype LessThanEq = LessThanEq Double deriving (Eq, Show)
 newtype GreaterThan = GreaterThan Double deriving (Eq, Show)
 newtype GreaterThanEq = GreaterThanEq Double deriving (Eq, Show)
 
+newtype LessThanT = LessThanT Text deriving (Eq, Show)
+newtype LessThanEqT = LessThanEqT Text deriving (Eq, Show)
+newtype GreaterThanT = GreaterThanT Text deriving (Eq, Show)
+newtype GreaterThanEqT = GreaterThanEqT Text deriving (Eq, Show)
+
 newtype LessThanD = LessThanD UTCTime deriving (Eq, Show)
 newtype LessThanEqD = LessThanEqD UTCTime deriving (Eq, Show)
 newtype GreaterThanD = GreaterThanD UTCTime deriving (Eq, Show)
@@ -1207,6 +1212,14 @@ data RangeValue = RangeDateLte LessThanEqD
                 | RangeDoubleGteLte GreaterThanEq LessThanEq
                 | RangeDoubleGteLt GreaterThanEq LessThan
                 | RangeDoubleGtLte GreaterThan LessThanEq
+                | RangeTextLte LessThanEqT
+                | RangeTextLt LessThanT
+                | RangeTextGte GreaterThanEqT
+                | RangeTextGt GreaterThanT
+                | RangeTextGtLt GreaterThanT LessThanT
+                | RangeTextGteLte GreaterThanEqT LessThanEqT
+                | RangeTextGteLt GreaterThanEqT LessThanT
+                | RangeTextGtLte GreaterThanT LessThanEqT             
                 deriving (Eq, Show)
 
 
@@ -1262,6 +1275,7 @@ instance FromJSON RangeValue where
   parseJSON = withObject "RangeValue" parse
     where parse o = parseDate o
                 <|> parseDouble o
+                <|> parseText o
           parseDate o =
             parseRangeValue
             GreaterThanD LessThanD
@@ -1280,7 +1294,16 @@ instance FromJSON RangeValue where
             RangeDoubleGt RangeDoubleLt
             RangeDoubleGte RangeDoubleLte
             mzero o
-
+          parseText o =
+            parseRangeValue
+            GreaterThanT LessThanT
+            GreaterThanEqT LessThanEqT
+            RangeTextGtLt RangeTextGteLt
+            RangeTextGtLte RangeTextGteLte
+            RangeTextGt RangeTextLt
+            RangeTextGte RangeTextLte
+            mzero o
+            
 rangeValueToPair :: RangeValue -> [Pair]
 rangeValueToPair rv = case rv of
   RangeDateLte (LessThanEqD t)                       -> ["lte" .= t]
@@ -1299,6 +1322,14 @@ rangeValueToPair rv = case rv of
   RangeDoubleGtLte (GreaterThan l) (LessThanEq g)    -> ["gt"  .= l, "lte" .= g]
   RangeDoubleGteLt (GreaterThanEq l) (LessThan g)    -> ["gte" .= l, "lt"  .= g]
   RangeDoubleGtLt (GreaterThan l) (LessThan g)       -> ["gt"  .= l, "lt"  .= g]
+  RangeTextLte (LessThanEqT t)                       -> ["lte" .= t]
+  RangeTextGte (GreaterThanEqT t)                    -> ["gte" .= t]
+  RangeTextLt (LessThanT t)                          -> ["lt"  .= t]
+  RangeTextGt (GreaterThanT t)                       -> ["gt"  .= t]
+  RangeTextGteLte (GreaterThanEqT l) (LessThanEqT g) -> ["gte" .= l, "lte" .= g]
+  RangeTextGtLte (GreaterThanT l) (LessThanEqT g)    -> ["gt"  .= l, "lte" .= g]
+  RangeTextGteLt (GreaterThanEqT l) (LessThanT g)    -> ["gte" .= l, "lt"  .= g]
+  RangeTextGtLt (GreaterThanT l) (LessThanT g)       -> ["gt"  .= l, "lt"  .= g]
 
 data Term = Term { termField :: Text
                  , termValue :: Text } deriving (Eq, Show)
