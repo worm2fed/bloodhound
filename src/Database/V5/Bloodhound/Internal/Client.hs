@@ -131,27 +131,33 @@ instance FromJSON Status where
 
 data IndexSettings = IndexSettings
   { indexShards   :: ShardCount
-  , indexReplicas :: ReplicaCount }
+  , indexReplicas :: ReplicaCount 
+  , indexFieldsLimit :: Maybe Int
+  }
   deriving (Eq, Show)
 
 instance ToJSON IndexSettings where
-  toJSON (IndexSettings s r) = object ["settings" .=
+  toJSON (IndexSettings s r l) = object ["settings" .=
                                  object ["index" .=
-                                   object ["number_of_shards" .= s, "number_of_replicas" .= r]
+                                   omitNulls [ "number_of_shards"           .= s
+                                             , "number_of_replicas"         .= r
+                                             , "mapping.total_fields.limit" .= l
+                                             ]
                                  ]
                                ]
 
 instance FromJSON IndexSettings where
-  parseJSON = withObject "IndexSettings" parse
+  parseJSON = withObject "IndexSettings" parse 
     where parse o = do s <- o .: "settings"
                        i <- s .: "index"
                        IndexSettings <$> i .: "number_of_shards"
                                      <*> i .: "number_of_replicas"
+                                     <*> i .:? "mapping.total_fields.limit"
 
 {-| 'defaultIndexSettings' is an 'IndexSettings' with 3 shards and
     2 replicas. -}
 defaultIndexSettings :: IndexSettings
-defaultIndexSettings =  IndexSettings (ShardCount 3) (ReplicaCount 2)
+defaultIndexSettings =  IndexSettings (ShardCount 3) (ReplicaCount 2) (Nothing)
 -- defaultIndexSettings is exported by Database.Bloodhound as well
 -- no trailing slashes in servers, library handles building the path.
 
