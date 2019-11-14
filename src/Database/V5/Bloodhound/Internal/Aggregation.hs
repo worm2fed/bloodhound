@@ -92,12 +92,12 @@ instance ToJSON Aggregation where
     omitNulls [ "filter" .= filt
               , "aggs" .= ags]
   toJSON (FiltersAgg filters) =
-    omitNulls [ "filters" .= object [ "filters" .= (fmap mkFilterAgg filters)
+    omitNulls [ "filters" .= object [ "filters" .= fmap mkFilterAgg filters
                                     ]
               ]
     where
-      mkFilterAgg :: (Text, Filter) -> Value
-      mkFilterAgg (name, filter') = object [ name .= toJSON filter' ]
+      mkFilterAgg :: (Text, Filter) -> Pair
+      mkFilterAgg (name, filter') = name .= toJSON filter'
   toJSON (DateRangeAgg a) = object [ "date_range" .= a
                                    ]
   toJSON (MissingAgg (MissingAggregation{..})) =
