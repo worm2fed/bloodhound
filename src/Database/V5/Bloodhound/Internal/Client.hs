@@ -133,20 +133,21 @@ data IndexSettings = IndexSettings
   { indexShards   :: ShardCount
   , indexReplicas :: ReplicaCount
   , indexFieldsLimit :: Maybe Int
-  , indexIndexedChars :: Maybe Int
+  , indexCustomFields :: [(Text, Value)]
   }
   deriving (Eq, Show)
 
 instance ToJSON IndexSettings where
-  toJSON (IndexSettings s r l c) = object ["settings" .=
-                                 object ["index" .=
-                                   omitNulls [ "number_of_shards"           .= s
-                                             , "number_of_replicas"         .= r
-                                             , "mapping.total_fields.limit" .= l
-                                             , "mapping.attachment.indexed_chars" .= c
+  toJSON (IndexSettings s r l cus) = object ["settings" .=
+                                      object ["index" .=
+                                        omitNulls ([ "number_of_shards"           .= s
+                                                    , "number_of_replicas"         .= r
+                                                    , "mapping.total_fields.limit" .= l                                                    
+                                                    ] ++
+                                                    (map (\(k,v) -> (k .= v)) cus)
+                                                  ) 
                                              ]
-                                 ]
-                               ]
+                                    ]
 
 instance FromJSON IndexSettings where
   parseJSON = withObject "IndexSettings" parse 
@@ -155,12 +156,16 @@ instance FromJSON IndexSettings where
                        IndexSettings <$> i .: "number_of_shards"
                                      <*> i .: "number_of_replicas"
                                      <*> i .:? "mapping.total_fields.limit"
-                                     <*> i .:? "mapping.attachment.indexed_chars"
+                                     <*> (pure . filter keyNotInList $ HM.toList i)
+          keyNotInList (key,_) = not $ key `elem` ["number_of_shards"
+                                                  , "number_of_replicas"
+                                                  , "mapping.total_fields.limit"
+                                                  ]
 
 {-| 'defaultIndexSettings' is an 'IndexSettings' with 3 shards and
     2 replicas. -}
 defaultIndexSettings :: IndexSettings
-defaultIndexSettings =  IndexSettings (ShardCount 3) (ReplicaCount 2) (Nothing) (Nothing)
+defaultIndexSettings =  IndexSettings (ShardCount 3) (ReplicaCount 2) (Nothing) []
 -- defaultIndexSettings is exported by Database.Bloodhound as well
 -- no trailing slashes in servers, library handles building the path.
 
