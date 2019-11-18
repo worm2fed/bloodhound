@@ -92,7 +92,7 @@ instance ToJSON Aggregation where
     omitNulls [ "filter" .= filt
               , "aggs" .= ags]
   toJSON (FiltersAgg filters) =
-    omitNulls [ "filters" .= object [ "filters" .= fmap mkFilterAgg filters
+    omitNulls [ "filters" .= object [ "filters" .= object (fmap mkFilterAgg filters)
                                     ]
               ]
     where
