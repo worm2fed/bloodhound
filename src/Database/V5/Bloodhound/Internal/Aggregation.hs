@@ -29,6 +29,7 @@ data Aggregation = TermsAgg TermsAggregation
                  | DateHistogramAgg DateHistogramAggregation
                  | ValueCountAgg ValueCountAggregation
                  | FilterAgg FilterAggregation
+                 | FiltersAgg [(Text, Filter)]
                  | DateRangeAgg DateRangeAggregation
                  | MissingAgg MissingAggregation
                  | TopHitsAgg TopHitsAggregation
@@ -90,6 +91,13 @@ instance ToJSON Aggregation where
   toJSON (FilterAgg (FilterAggregation filt ags)) =
     omitNulls [ "filter" .= filt
               , "aggs" .= ags]
+  toJSON (FiltersAgg filters) =
+    omitNulls [ "filters" .= object [ "filters" .= object (fmap mkFilterAgg filters)
+                                    ]
+              ]
+    where
+      mkFilterAgg :: (Text, Filter) -> Pair
+      mkFilterAgg (name, filter') = name .= toJSON filter'
   toJSON (DateRangeAgg a) = object [ "date_range" .= a
                                    ]
   toJSON (MissingAgg (MissingAggregation{..})) =
