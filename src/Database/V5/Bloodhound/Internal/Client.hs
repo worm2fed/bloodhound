@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
@@ -2345,7 +2346,13 @@ instance ToJSON Interval where
   toJSON Minute  = "minute"
   toJSON Second  = "second"
 
-parseStringInterval :: (Monad m) => String -> m NominalDiffTime
+parseStringInterval ::
+#if MIN_VERSION_base(4,13,0)
+  (Monad m, MonadFail m) =>
+#else
+  Monad m =>
+#endif
+  String -> m NominalDiffTime
 parseStringInterval s = case span isNumber s of
   ("", _) -> fail "Invalid interval"
   (nS, unitS) -> case (readMay nS, readMay unitS) of

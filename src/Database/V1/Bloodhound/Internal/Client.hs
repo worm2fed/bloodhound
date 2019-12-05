@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
@@ -11,7 +12,6 @@ import           Bloodhound.Import
 
 import           Control.Applicative                           as A
 import qualified Data.HashMap.Strict                           as HM
-import           Data.Text                                     (Text)
 import qualified Data.Text                                     as T
 import qualified Data.Traversable                              as DT
 import qualified Data.Vector                                   as V
@@ -1552,7 +1552,13 @@ instance ToJSON Interval where
   toJSON Second = "second"
   toJSON (FractionalInterval fraction interval) = toJSON $ show fraction ++ show interval
 
-parseStringInterval :: (Monad m) => String -> m NominalDiffTime
+parseStringInterval ::
+#if MIN_VERSION_base(4,13,0)
+  (Monad m, MonadFail m) =>
+#else
+  Monad m =>
+#endif
+  String -> m NominalDiffTime
 parseStringInterval s = case span isNumber s of
   ("", _) -> fail "Invalid interval"
   (nS, unitS) -> case (readMay nS, readMay unitS) of

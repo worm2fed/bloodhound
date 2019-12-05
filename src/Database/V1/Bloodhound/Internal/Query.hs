@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE RecordWildCards            #-}
@@ -1480,7 +1481,13 @@ instance FromJSON ZeroTermsQuery where
           parse "all"  = pure ZeroTermsAll
           parse q      = fail ("Unexpected ZeroTermsQuery: " <> show q)
 
-fieldTagged :: Monad m => (FieldName -> Object -> m a) -> Object -> m a
+fieldTagged ::
+#if MIN_VERSION_base(4,13,0)
+  (Monad m, MonadFail m) =>
+#else
+  Monad m =>
+#endif
+  (FieldName -> Object -> m a) -> Object -> m a
 fieldTagged f o = case HM.toList o of
                     [(k, Object o')] -> f (FieldName k) o'
                     _ -> fail "Expected object with 1 field-named key"

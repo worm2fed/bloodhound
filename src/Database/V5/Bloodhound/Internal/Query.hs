@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE RecordWildCards            #-}
@@ -9,9 +10,7 @@ module Database.V5.Bloodhound.Internal.Query
 
 import           Bloodhound.Import
 
-import           Data.Char           (isNumber)
 import qualified Data.HashMap.Strict as HM
-import           Data.List           (nub)
 import qualified Data.Text           as T
 
 import           Database.Bloodhound.Common.Script as X
@@ -1660,7 +1659,13 @@ functionScoreFunctionsPair (FunctionScoreSingle fn)
 functionScoreFunctionsPair (FunctionScoreMultiple componentFns) =
   ("functions", toJSON componentFns)
 
-fieldTagged :: Monad m => (FieldName -> Object -> m a) -> Object -> m a
+fieldTagged ::
+#if MIN_VERSION_base(4,13,0)
+  (Monad m, MonadFail m) =>
+#else
+  Monad m =>
+#endif
+  (FieldName -> Object -> m a) -> Object -> m a
 fieldTagged f o = case HM.toList o of
                     [(k, Object o')] -> f (FieldName k) o'
                     _ -> fail "Expected object with 1 field-named key"
