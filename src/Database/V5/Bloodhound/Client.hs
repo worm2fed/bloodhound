@@ -525,13 +525,13 @@ createIndex indexSettings (IndexName indexName) =
 createIndexWith :: MonadBH m
   => [UpdatableIndexSetting]
   -> Int -- ^ shard count
-  -> IndexName 
+  -> IndexName
   -> m Reply
 createIndexWith updates shards (IndexName indexName) =
   bindM2 put url (return (Just body))
   where url = joinPath [indexName]
         body = encode $ object
-          ["settings" .= deepMerge 
+          ["settings" .= deepMerge
             ( HM.singleton "index.number_of_shards" (toJSON shards) :
               [u | Object u <- toJSON <$> updates]
             )
@@ -577,8 +577,8 @@ getIndexSettings (IndexName indexName) =
   where
     url = joinPath [indexName, "_settings"]
 
--- | 'forceMergeIndex' 
--- 
+-- | 'forceMergeIndex'
+--
 -- The force merge API allows to force merging of one or more indices through
 -- an API. The merge relates to the number of segments a Lucene index holds
 -- within each shard. The force merge operation allows to reduce the number of
@@ -756,11 +756,11 @@ getIndexAliases :: (MonadBH m, MonadThrow m)
                 => m (Either EsError IndexAliasesSummary)
 getIndexAliases = parseEsResponse =<< get =<< url
   where url = joinPath ["_aliases"]
-  
+
 -- | Get summary for specific alias configured on the server.
 getIndexAlias :: (MonadBH m, MonadThrow m)
                 => IndexAliasName -> m (Either EsError IndexAliasesSummary)
-getIndexAlias (IndexAliasName (IndexName name)) = 
+getIndexAlias (IndexAliasName (IndexName name)) =
     parseEsResponse =<< get =<< url
   where url = joinPath ["_alias",name]
 
@@ -887,7 +887,7 @@ bulk bulkOps =
   bindM2 post url (return body)
   where
     url = addQuery q <$> joinPath ["_bulk"]
-    q = [("timeout", Just "180s")]
+    q = [("timeout", Just "5m")]
     body = Just $ encodeBulkOperations bulkOps
 
 -- | 'encodeBulkOperations' is a convenience function for dumping a vector of 'BulkOperation'
@@ -1045,10 +1045,10 @@ searchByType (IndexName indexName)
 -- search results. Note that the search is put into 'SearchTypeScan'
 -- mode and thus results will not be sorted. Combine this with
 -- 'advanceScroll' to efficiently stream through the full result set
-getInitialScroll :: 
-  (FromJSON a, MonadThrow m, MonadBH m) => IndexName -> 
-                                           MappingName -> 
-                                           Search -> 
+getInitialScroll ::
+  (FromJSON a, MonadThrow m, MonadBH m) => IndexName ->
+                                           MappingName ->
+                                           Search ->
                                            m (Either EsError (SearchResult a))
 getInitialScroll (IndexName indexName) (MappingName mappingName) search' = do
     let url = addQuery params <$> joinPath [indexName, mappingName, "_search"]
@@ -1073,7 +1073,7 @@ getInitialSortedScroll (IndexName indexName) (MappingName mappingName) search = 
     resp' <- bindM2 dispatchSearch url (return search)
     parseEsResponse resp'
 
-scroll' :: (FromJSON a, MonadBH m, MonadThrow m) => Maybe ScrollId -> 
+scroll' :: (FromJSON a, MonadBH m, MonadThrow m) => Maybe ScrollId ->
                                                     m ([Hit a], Maybe ScrollId)
 scroll' Nothing = return ([], Nothing)
 scroll' (Just sid) = do
@@ -1100,13 +1100,13 @@ advanceScroll (ScrollId sid) scroll = do
   where scrollTime = showText secs <> "s"
         secs :: Integer
         secs = round scroll
-        
+
         scrollObject = object [ "scroll" .= scrollTime
                               , "scroll_id" .= sid
                               ]
 
-simpleAccumulator :: 
-  (FromJSON a, MonadBH m, MonadThrow m) => 
+simpleAccumulator ::
+  (FromJSON a, MonadBH m, MonadThrow m) =>
                                 [Hit a] ->
                                 ([Hit a], Maybe ScrollId) ->
                                 m ([Hit a], Maybe ScrollId)
@@ -1115,20 +1115,20 @@ simpleAccumulator oldHits ([], _) = return (oldHits, Nothing)
 simpleAccumulator oldHits (newHits, msid) = do
     (newHits', msid') <- scroll' msid
     simpleAccumulator (oldHits ++ newHits) (newHits', msid')
-    
--- | Manually clearing scrolls as soon as you are finished using them is 
+
+-- | Manually clearing scrolls as soon as you are finished using them is
 -- recommended by Elastic in order to release the memory more quickly.
 deleteScroll :: MonadBH m => Scrolls -> m Reply
-deleteScroll ScrollsAll = 
+deleteScroll ScrollsAll =
     joinPath ["_search", "scroll", "_all"] >>= delete
 deleteScroll (ScrollsSingle (ScrollId si)) =
     joinPath ["_search", "scroll", si]     >>= delete
-deleteScroll (ScrollsMulti sis) = 
+deleteScroll (ScrollsMulti sis) =
     joinPath ["_search", "scroll", sisStr] >>= delete
-  where 
+  where
     sisStr = T.intercalate "," $ map getSiText sis
     getSiText (ScrollId si) = si
-    
+
 -- | 'scanSearch' uses the 'scroll' API of elastic,
 -- for a given 'IndexName' and 'MappingName'. Note that this will
 -- consume the entire search result set and will be doing O(n) list
