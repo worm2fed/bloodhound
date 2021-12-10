@@ -886,7 +886,8 @@ bulk :: MonadBH m => V.Vector BulkOperation -> m Reply
 bulk bulkOps =
   bindM2 post url (return body)
   where
-    url = joinPath ["_bulk"]
+    url = addQuery q <$> joinPath ["_bulk"]
+    q = [("timeout", Just "180s")]
     body = Just $ encodeBulkOperations bulkOps
 
 -- | 'encodeBulkOperations' is a convenience function for dumping a vector of 'BulkOperation'
